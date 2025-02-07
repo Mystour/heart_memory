@@ -27,7 +27,7 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center, // 居中对齐
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               TextFormField(
                 controller: _emailController,
@@ -91,6 +91,7 @@ class _LoginScreenState extends State<LoginScreen> {
         _isLoading = true;
       });
       try {
+        // 尝试登录
         await AppwriteService.instance.login(
           _emailController.text,
           _passwordController.text,

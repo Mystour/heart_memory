@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:heart_memory/screens/login_screen.dart';
 import 'package:heart_memory/services/appwrite_service.dart';
 
+import 'home_screen.dart';
+
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({Key? key}) : super(key: key);
 
@@ -100,6 +102,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
+  // screens/register_screen.dart
   Future<void> _register() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
@@ -112,13 +115,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
           _passwordController.text,
         );
 
-        // 注册成功，可以自动登录，或者跳转到登录页面
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        // 注册成功后的处理
+        setState(() {
+          _isLoading = false;
+        });
+
+        // 显示注册成功提示 (SnackBar)
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('注册成功，已自动登录！'),
+            duration: Duration(seconds: 2), // 可选，设置显示时长
+          ),
         );
+
+        // 延迟跳转到主页 (可选，给用户一点时间看到提示)
+        Future.delayed(const Duration(seconds: 2), () {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const HomeScreen()),
+          );
+        });
+
       } catch (e) {
-        // 注册失败，显示错误信息
         setState(() {
           _isLoading = false;
         });
