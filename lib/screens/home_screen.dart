@@ -141,7 +141,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('心动 జ్ఞాప'),
+        title: const Text('心动瞬间'),
       ),
       drawer: _user != null ? _buildDrawer(context) : null, // 已登录才显示抽屉
       body: _isLoading

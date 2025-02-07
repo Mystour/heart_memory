@@ -4,5 +4,5 @@ class AppConstants {
   static const String appwriteProjectId = 'heart-memory-app'; // 替换为你的 Appwrite Project ID
 
   // 其他常量...
-  static const String appName = '心动 జ్ఞాప';
+  static const String appName = '心动瞬间';
 }
