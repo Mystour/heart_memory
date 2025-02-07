@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:heart_memory/models/memory.dart';
 import 'package:heart_memory/services/appwrite_service.dart';
+import 'package:heart_memory/screens/photo_view_screen.dart'; // 引入 PhotoViewScreen
+import 'package:intl/intl.dart';
 import 'dart:typed_data';
 
 class AlbumScreen extends StatefulWidget {
@@ -13,7 +15,8 @@ class AlbumScreen extends StatefulWidget {
 class _AlbumScreenState extends State<AlbumScreen> {
   List<Memory> _memories = [];
   bool _isLoading = true;
-  // Map<String, List<Memory>> _albums = {}; // 用于按标签分组
+  String _selectedCategory = '标签'; // 默认分类方式
+  Map<String, List<Memory>> _categorizedMemories = {}; // 分类后的数据
 
   @override
   void initState() {
@@ -27,7 +30,7 @@ class _AlbumScreenState extends State<AlbumScreen> {
       setState(() {
         _memories = memories;
         _isLoading = false;
-        // _createAlbums(); // 对数据进行分组
+        _categorizeMemories(); // 加载数据后进行分类
       });
     } catch (e) {
       setState(() {
@@ -38,93 +41,162 @@ class _AlbumScreenState extends State<AlbumScreen> {
       );
     }
   }
-
-  Future<void> _refreshMemories() async {
+  Future<void> _refreshMemories() async{
     await _loadMemories();
   }
 
-  // // 按标签创建相册分组
-  // void _createAlbums() {
-  //   _albums.clear();
-  //   for (var memory in _memories) {
-  //     for (var tag in memory.tags) { // 遍历每个回忆的每个标签
-  //       if (_albums.containsKey(tag)) {
-  //         _albums[tag]!.add(memory);
-  //       } else {
-  //         _albums[tag] = [memory];
-  //       }
-  //     }
-  //   }
-  // }
+  // 根据选择的分类方式进行分类
+  void _categorizeMemories() {
+    _categorizedMemories.clear();
+
+    if (_selectedCategory == '标签') {
+      // 按标签分类
+      for (var memory in _memories) {
+        for (var tag in memory.tags) {
+          if (_categorizedMemories.containsKey(tag)) {
+            _categorizedMemories[tag]!.add(memory);
+          } else {
+            _categorizedMemories[tag] = [memory];
+          }
+        }
+      }
+    } else if (_selectedCategory == '年份') {
+      // 按年份分类
+      for (var memory in _memories) {
+        final year = memory.date.year.toString();
+        if (_categorizedMemories.containsKey(year)) {
+          _categorizedMemories[year]!.add(memory);
+        } else {
+          _categorizedMemories[year] = [memory];
+        }
+      }
+    } else if (_selectedCategory == '月份') {
+      // 按月份分类
+      for (var memory in _memories) {
+        final yearMonth = DateFormat('yyyy-MM').format(memory.date);
+        if (_categorizedMemories.containsKey(yearMonth)) {
+          _categorizedMemories[yearMonth]!.add(memory);
+        } else {
+          _categorizedMemories[yearMonth] = [memory];
+        }
+      }
+    }
+  }
+
+  // 构建分类下拉菜单
+  Widget _buildCategoryDropdown() {
+    return DropdownButton<String>(
+      value: _selectedCategory,
+      onChanged: (String? newValue) {
+        if (newValue != null) {
+          setState(() {
+            _selectedCategory = newValue;
+            _categorizeMemories(); // 切换分类方式后重新分类
+          });
+        }
+      },
+      items: <String>['标签', '年份', '月份']
+          .map<DropdownMenuItem<String>>((String value) {
+        return DropdownMenuItem<String>(
+          value: value,
+          child: Text(value),
+        );
+      }).toList(),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('相册'),
+        actions: [
+          _buildCategoryDropdown(), // 添加分类下拉菜单
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _memories.isEmpty // 或 _albums.isEmpty
+          : _categorizedMemories.isEmpty
           ? const Center(child: Text('还没有照片，快去添加吧！'))
           : RefreshIndicator(
         onRefresh: _refreshMemories,
-        child: GridView.builder(
-          // itemCount: _albums.keys.length, // 如果按相册分组, 使用 _albums.keys.length
-          itemCount: _memories.length, // 不分组, 直接显示所有照片
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
-            crossAxisSpacing: 4.0,
-            mainAxisSpacing: 4.0,
-          ),
+        child: ListView.builder(
+          // 使用 ListView.builder
+          itemCount: _categorizedMemories.keys.length,
           itemBuilder: (context, index) {
-            // final albumKey = _albums.keys.elementAt(index); // 如果按相册分组
-            // final memoriesInAlbum = _albums[albumKey]!;      // 如果按相册分组
+            final category = _categorizedMemories.keys.elementAt(index);
+            final memoriesInCategory = _categorizedMemories[category]!;
 
-            // return Column( // 如果按相册分组, 可以用 Column 显示相册标题和图片
-            //   children: [
-            //     Text(albumKey), // 相册标题
-            //     Expanded(
-            //       child: GridView.builder(
-            //         itemCount: memoriesInAlbum.length,
-            //         gridDelegate:
-            //             const SliverGridDelegateWithFixedCrossAxisCount(
-            //           crossAxisCount: 3,
-            //           crossAxisSpacing: 4.0,
-            //           mainAxisSpacing: 4.0,
-            //         ),
-            //         itemBuilder: (context, index) {
-            //           // 显示 memoriesInAlbum[index] 中的图片
-            //         },
-            //       ),
-            //     ),
-            //   ],
-            // );
-
-            // 不分组, 直接显示图片
-            if (_memories[index].images.isNotEmpty) {
-              return FutureBuilder<Uint8List>(
-                future: AppwriteService.instance.getFilePreview(
-                    fileId: _memories[index].images[0]), // 只显示第一张图片
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState ==
-                      ConnectionState.waiting) {
-                    return const CircularProgressIndicator();
-                  } else if (snapshot.hasError) {
-                    return Text('Error: ${snapshot.error}');
-                  } else if (snapshot.hasData) {
-                    return Image.memory(
-                      snapshot.data!,
-                      fit: BoxFit.cover,
-                    );
-                  } else {
-                    return const SizedBox();
-                  }
-                },
-              );
-            } else {
-              return Container(); // 没有图片时显示空容器
-            }
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text(
+                    category, // 显示分类标题 (标签、年份或月份)
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                GridView.builder(
+                  // 使用 GridView 显示图片
+                  shrinkWrap:
+                  true, // 允许 GridView 在 ListView 中滚动  非常重要，避免错误
+                  physics:
+                  const NeverScrollableScrollPhysics(), // 禁止 GridView 自身的滚动
+                  itemCount: memoriesInCategory.length,
+                  gridDelegate:
+                  const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 4.0,
+                    mainAxisSpacing: 4.0,
+                  ),
+                  itemBuilder: (context, index) {
+                    final memory = memoriesInCategory[index];
+                    if (memory.images.isNotEmpty) {
+                      return InkWell( // 使用 InkWell 包裹，添加点击效果
+                        onTap: () async {
+                          // 点击图片，打开 PhotoViewScreen
+                          final imageData =
+                          await AppwriteService.instance.getFilePreview(
+                              fileId: memory.images[0]);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => PhotoViewScreen(
+                                imageData: imageData,
+                                title: memory.title, // 传递标题
+                              ),
+                            ),
+                          );
+                        },
+                        child: FutureBuilder<Uint8List>(
+                          future: AppwriteService.instance.getFilePreview(
+                              fileId: memory.images[0]),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const CircularProgressIndicator();
+                            } else if (snapshot.hasError) {
+                              return Text('Error: ${snapshot.error}');
+                            } else if (snapshot.hasData) {
+                              return Image.memory(
+                                snapshot.data!,
+                                fit: BoxFit.cover,
+                              );
+                            } else {
+                              return const SizedBox();
+                            }
+                          },
+                        ),
+                      );
+                    } else {
+                      return Container();
+                    }
+                  },
+                ),
+              ],
+            );
           },
         ),
       ),
