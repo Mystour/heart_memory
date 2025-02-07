@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:heart_memory/models/memory.dart';
 import 'package:heart_memory/services/appwrite_service.dart';
-import 'package:intl/intl.dart'; // 引入 intl 库
+import 'package:intl/intl.dart';
+import 'dart:typed_data';
 
 class MemoryCard extends StatelessWidget {
   final Memory memory;
@@ -23,7 +24,7 @@ class MemoryCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              DateFormat('yyyy-MM-dd HH:mm').format(memory.date), // 格式化日期
+              DateFormat('yyyy-MM-dd HH:mm').format(memory.date),
               style: const TextStyle(color: Colors.grey),
             ),
             const SizedBox(height: 8),
@@ -38,9 +39,24 @@ class MemoryCard extends StatelessWidget {
                   itemBuilder: (context, index) {
                     return Padding(
                       padding: const EdgeInsets.only(right: 8.0),
-                      child: Image.network(
-                        AppwriteService.instance.getFilePreviewUrl(memory.images[index]),
-                        fit: BoxFit.cover,
+                      child: FutureBuilder<Uint8List>( // 使用 FutureBuilder
+                        future: AppwriteService.instance.getFilePreview(
+                            fileId: memory.images[index]),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const CircularProgressIndicator(); // 加载中
+                          } else if (snapshot.hasError) {
+                            return Text('Error: ${snapshot.error}'); // 显示错误
+                          } else if (snapshot.hasData) {
+                            return Image.memory(
+                              snapshot.data!, // 显示图片
+                              fit: BoxFit.cover,
+                            );
+                          } else {
+                            return const SizedBox(); // 没有数据
+                          }
+                        },
                       ),
                     );
                   },
@@ -50,9 +66,24 @@ class MemoryCard extends StatelessWidget {
             // Text('这里可以放视频播放器'), // TODO: 添加视频播放器
               AspectRatio(
                 aspectRatio: 16 / 9, // 根据你的视频比例调整
-                child:  Image.network(
-                  AppwriteService.instance.getFilePreviewUrl(memory.video!),
-                  fit: BoxFit.cover,
+                child:  FutureBuilder<Uint8List>( // 使用 FutureBuilder
+                  future: AppwriteService.instance.getFilePreview(
+                      fileId: memory.video!),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState ==
+                        ConnectionState.waiting) {
+                      return const CircularProgressIndicator(); // 加载中
+                    } else if (snapshot.hasError) {
+                      return Text('Error: ${snapshot.error}'); // 显示错误
+                    } else if (snapshot.hasData) {
+                      return Image.memory(
+                        snapshot.data!, // 显示图片
+                        fit: BoxFit.cover,
+                      );
+                    } else {
+                      return const SizedBox(); // 没有数据
+                    }
+                  },
                 ),
               ),
             if (memory.location != null && memory.location!.isNotEmpty)

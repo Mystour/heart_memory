@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:appwrite/appwrite.dart';
 import 'package:appwrite/models.dart' as models;
 import 'package:heart_memory/models/memory.dart';
@@ -279,10 +281,19 @@ class AppwriteService {
     }
   }
 
-  // 获取文件预览 URL
-  String getFilePreviewUrl(String fileId) {
-    return '${_client.endPoint}/storage/buckets/${AppConstants.bucketId}/files/$fileId/preview?project=${_client.config['project']!}';
+  // 获取文件预览 (返回 Uint8List)
+  Future<Uint8List> getFilePreview({required String fileId}) async {
+    try {
+      final bytes = await _storage.getFilePreview(
+        bucketId: AppConstants.bucketId,
+        fileId: fileId,
+      );
+      return bytes;
+    } catch (e) {
+      rethrow;
+    }
   }
+
   // 获取文件下载 URL (如果需要)
   String getFileDownloadUrl(String fileId) {
     return '${_client.endPoint}/storage/buckets/${AppConstants.bucketId}/files/$fileId/download?project=${_client.config['project']!}';

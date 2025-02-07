@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:heart_memory/models/memory.dart';
 import 'package:heart_memory/services/appwrite_service.dart';
-import 'package:heart_memory/widgets/memory_card.dart';
+import 'dart:typed_data';
 
 class AlbumScreen extends StatefulWidget {
   const AlbumScreen({Key? key}) : super(key: key);
@@ -13,8 +13,7 @@ class AlbumScreen extends StatefulWidget {
 class _AlbumScreenState extends State<AlbumScreen> {
   List<Memory> _memories = [];
   bool _isLoading = true;
-  // 这里可以添加一个 Map<String, List<Memory>> 来按相册分组
-  // 例如: Map<String, List<Memory>> _albums = {};
+  // Map<String, List<Memory>> _albums = {}; // 用于按标签分组
 
   @override
   void initState() {
@@ -22,32 +21,33 @@ class _AlbumScreenState extends State<AlbumScreen> {
     _loadMemories();
   }
 
-  Future<void> _loadMemories() async {    try {
-    final memories = await AppwriteService.instance.getMemories();
-    setState(() {
-      _memories = memories;
-      _isLoading = false;
-      // 在这里对 _memories 进行分组，例如按标签分组
-      // _createAlbums();
-    });
-  } catch (e) {
-    setState(() {
-      _isLoading = false;
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('加载相册失败: $e')),
-    );
+  Future<void> _loadMemories() async {
+    try {
+      final memories = await AppwriteService.instance.getMemories();
+      setState(() {
+        _memories = memories;
+        _isLoading = false;
+        // _createAlbums(); // 对数据进行分组
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('加载相册失败: $e')),
+      );
+    }
   }
-  }
-  Future<void> _refreshMemories() async{
+
+  Future<void> _refreshMemories() async {
     await _loadMemories();
   }
 
-  // (可选) 创建相册分组的函数
+  // // 按标签创建相册分组
   // void _createAlbums() {
   //   _albums.clear();
   //   for (var memory in _memories) {
-  //     for (var tag in memory.tags) {
+  //     for (var tag in memory.tags) { // 遍历每个回忆的每个标签
   //       if (_albums.containsKey(tag)) {
   //         _albums[tag]!.add(memory);
   //       } else {
@@ -60,37 +60,74 @@ class _AlbumScreenState extends State<AlbumScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: const Text('相册'),
-        ),
-        body: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : _memories.isEmpty //或者 _albums.isEmpty
-            ? const Center(child: Text('还没有照片，快去添加吧！'))
-            : RefreshIndicator(
-          onRefresh: _refreshMemories,
-          child: GridView.builder(
-            // 如果使用了 _albums, 这里要改为 _albums.keys.length 和 _albums[_albums.keys.elementAt(index)]
-            itemCount: _memories.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3, // 每行3列
-              crossAxisSpacing: 4.0,
-              mainAxisSpacing: 4.0,
-            ),
-            itemBuilder: (context, index) {
-              //这里需要修改为只显示图片
-              if(_memories[index].images.isNotEmpty){
-                return Image.network(
-                  AppwriteService.instance.getFilePreviewUrl(_memories[index].images[0]), //只展示第一张
-                  fit: BoxFit.cover,
-                );
-              } else {
-                return Container(); // 没有图片时显示空容器
-              }
-              // return MemoryCard(memory: _memories[index]); // 或者自定义一个 AlbumItem Widget
-            },
+      appBar: AppBar(
+        title: const Text('相册'),
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _memories.isEmpty // 或 _albums.isEmpty
+          ? const Center(child: Text('还没有照片，快去添加吧！'))
+          : RefreshIndicator(
+        onRefresh: _refreshMemories,
+        child: GridView.builder(
+          // itemCount: _albums.keys.length, // 如果按相册分组, 使用 _albums.keys.length
+          itemCount: _memories.length, // 不分组, 直接显示所有照片
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            crossAxisSpacing: 4.0,
+            mainAxisSpacing: 4.0,
           ),
-        )
+          itemBuilder: (context, index) {
+            // final albumKey = _albums.keys.elementAt(index); // 如果按相册分组
+            // final memoriesInAlbum = _albums[albumKey]!;      // 如果按相册分组
+
+            // return Column( // 如果按相册分组, 可以用 Column 显示相册标题和图片
+            //   children: [
+            //     Text(albumKey), // 相册标题
+            //     Expanded(
+            //       child: GridView.builder(
+            //         itemCount: memoriesInAlbum.length,
+            //         gridDelegate:
+            //             const SliverGridDelegateWithFixedCrossAxisCount(
+            //           crossAxisCount: 3,
+            //           crossAxisSpacing: 4.0,
+            //           mainAxisSpacing: 4.0,
+            //         ),
+            //         itemBuilder: (context, index) {
+            //           // 显示 memoriesInAlbum[index] 中的图片
+            //         },
+            //       ),
+            //     ),
+            //   ],
+            // );
+
+            // 不分组, 直接显示图片
+            if (_memories[index].images.isNotEmpty) {
+              return FutureBuilder<Uint8List>(
+                future: AppwriteService.instance.getFilePreview(
+                    fileId: _memories[index].images[0]), // 只显示第一张图片
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState ==
+                      ConnectionState.waiting) {
+                    return const CircularProgressIndicator();
+                  } else if (snapshot.hasError) {
+                    return Text('Error: ${snapshot.error}');
+                  } else if (snapshot.hasData) {
+                    return Image.memory(
+                      snapshot.data!,
+                      fit: BoxFit.cover,
+                    );
+                  } else {
+                    return const SizedBox();
+                  }
+                },
+              );
+            } else {
+              return Container(); // 没有图片时显示空容器
+            }
+          },
+        ),
+      ),
     );
   }
 }
