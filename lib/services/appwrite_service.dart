@@ -6,6 +6,8 @@ import 'package:heart_memory/models/message.dart';
 import 'package:heart_memory/models/user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../utils/app_constants.dart';
+
 class AppwriteService {
   static final AppwriteService instance = AppwriteService._();
 
@@ -89,8 +91,8 @@ class AppwriteService {
     final userId = await _getUserId();
     try {
       final document = await _databases.createDocument(
-        databaseId: 'your_database_id',
-        collectionId: 'memories',
+        databaseId: AppConstants.databaseId, // 使用常量
+        collectionId: 'memories', // 使用字符串字面量，因为集合 ID 不会变
         documentId: ID.unique(),
         data: memory.toMap()..addAll({'userId': userId}),
       );
@@ -99,16 +101,15 @@ class AppwriteService {
       rethrow;
     }
   }
-
   // 获取所有记录 (根据用户ID过滤)
   Future<List<Memory>> getMemories() async {
-    final userId = await _getUserId();
+    final userId = await _getUserId(); // 获取用户ID
     try {
       final documents = await _databases.listDocuments(
-        databaseId: 'your_database_id',
+        databaseId: AppConstants.databaseId,
         collectionId: 'memories',
         queries: [
-          Query.equal('userId', userId),
+          Query.equal('userId', userId), // 只获取当前用户的记录
           Query.orderDesc('\$createdAt'),
         ],
       );
@@ -121,10 +122,10 @@ class AppwriteService {
   Future<Memory> updateMemory(Memory memory) async {
     try {
       final document = await _databases.updateDocument(
-        databaseId: 'your_database_id',
+        databaseId: AppConstants.databaseId,
         collectionId: 'memories',
         documentId: memory.id,
-        data: memory.toMap(),
+        data: memory.toMap(), // 使用 toMap 方法
       );
       return Memory.fromMap(document.data);
     } catch (e) {
@@ -134,7 +135,7 @@ class AppwriteService {
   Future<void> deleteMemory(String memoryId) async {
     try {
       await _databases.deleteDocument(
-        databaseId: 'your_database_id',
+        databaseId:  AppConstants.databaseId,
         collectionId: 'memories',
         documentId: memoryId,
       );
@@ -143,14 +144,13 @@ class AppwriteService {
     }
   }
 
-  // Anniversary 相关 (create, get, update, delete) ... 与之前类似，但要确保使用 toMap()
-  // 创建纪念日
+  // Anniversary 相关
   Future<Anniversary> createAnniversary(Anniversary anniversary) async {
     final userId = await _getUserId();
     try {
       final document = await _databases.createDocument(
-        databaseId: 'your_database_id',
-        collectionId: 'anniversaries',
+        databaseId: AppConstants.databaseId,
+        collectionId: 'anniversaries', // 使用字符串字面量
         documentId: ID.unique(),
         data: anniversary.toMap()..addAll({'userId': userId}),
       );
@@ -165,11 +165,11 @@ class AppwriteService {
     final userId = await _getUserId();
     try {
       final documents = await _databases.listDocuments(
-        databaseId: 'your_database_id',
+        databaseId: AppConstants.databaseId,
         collectionId: 'anniversaries',
         queries: [
-          Query.equal('userId', userId),
-          Query.orderDesc('date'),
+          Query.equal('userId', userId), // 过滤用户
+          Query.orderDesc('date'), // 可以按日期排序
         ],
       );
       return documents.documents.map((doc) => Anniversary.fromMap(doc.data)).toList();
@@ -181,7 +181,7 @@ class AppwriteService {
   Future<Anniversary> updateAnniversary(Anniversary anniversary) async {
     try {
       final document = await _databases.updateDocument(
-        databaseId: 'your_database_id',
+        databaseId: AppConstants.databaseId,
         collectionId: 'anniversaries',
         documentId: anniversary.id,
         data: anniversary.toMap(),
@@ -196,7 +196,7 @@ class AppwriteService {
   Future<void> deleteAnniversary(String anniversaryId) async {
     try {
       await _databases.deleteDocument(
-        databaseId: 'your_database_id',
+        databaseId: AppConstants.databaseId,
         collectionId: 'anniversaries',
         documentId: anniversaryId,
       );
@@ -205,13 +205,12 @@ class AppwriteService {
     }
   }
 
-  // Message 相关 (create, get, update, delete) ... 与之前类似，但要确保使用 toMap()
-  // 发送消息 (简化版，仅文本消息)
+  // Message 相关
   Future<Message> sendMessage(Message message) async {
     final userId = await _getUserId();
     try {
       final document = await _databases.createDocument(
-        databaseId: 'your_database_id',
+        databaseId: AppConstants.databaseId,
         collectionId: 'messages',
         documentId: ID.unique(),
         data: message.toMap()..addAll({'userId': userId}),
@@ -227,7 +226,7 @@ class AppwriteService {
     final userId = await _getUserId();
     try {
       final documents = await _databases.listDocuments(
-        databaseId: 'your_database_id',
+        databaseId: AppConstants.databaseId,
         collectionId: 'messages',
         queries: [
           Query.equal('userId', userId),
@@ -243,7 +242,7 @@ class AppwriteService {
   Future<Message> updateMessage(Message message) async {
     try {
       final document = await _databases.updateDocument(
-        databaseId: 'your_database_id',
+        databaseId: AppConstants.databaseId,
         collectionId: 'messages',
         documentId: message.id,
         data: message.toMap(), // 使用 toMap
@@ -258,7 +257,7 @@ class AppwriteService {
   Future<void> deleteMessage(String messageId) async {
     try {
       await _databases.deleteDocument(
-        databaseId: 'your_database_id',
+        databaseId: AppConstants.databaseId,
         collectionId: 'messages',
         documentId: messageId,
       );
@@ -270,7 +269,7 @@ class AppwriteService {
   Future<String> uploadFile(String filePath) async {
     try {
       final file = await _storage.createFile(
-        bucketId: 'your_bucket_id',
+        bucketId: AppConstants.bucketId, // 使用常量
         fileId: ID.unique(),
         file: InputFile.fromPath(path: filePath),
       );
@@ -282,20 +281,11 @@ class AppwriteService {
 
   // 获取文件预览 URL
   String getFilePreviewUrl(String fileId) {
-    return _client.endPoint
-        .replaceAll('/v1', '') +
-        '/storage/buckets/' +
-        'your_bucket_id' +
-        '/files/' +
-        fileId +
-        '/preview?project=' +
-        _client.config['project']!;
+    return '${_client.endPoint}/storage/buckets/${AppConstants.bucketId}/files/$fileId/preview?project=${_client.config['project']!}';
   }
   // 获取文件下载 URL (如果需要)
   String getFileDownloadUrl(String fileId) {
-    return _client.endPoint
-        .replaceAll('/v1', '')+ '/storage/buckets/' + 'your_bucket_id' + '/files/' +
-        fileId +  '/download?project=' + _client.config['project']!;
+    return '${_client.endPoint}/storage/buckets/${AppConstants.bucketId}/files/$fileId/download?project=${_client.config['project']!}';
   }
 
   // 登录 (修正方法名)
