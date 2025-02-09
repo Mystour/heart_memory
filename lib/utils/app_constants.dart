@@ -10,5 +10,5 @@ class AppConstants {
   static const String bucketId = 'media';
 
   // 其他常量...
-  static const String appName = '心动瞬间';
+  static const String appName = '菜花回忆';
 }

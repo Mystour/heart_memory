@@ -104,3 +104,12 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+
+flutter_launcher_icons:
+  android: "launcher_icon" #  Android 图标配置 (true 表示启用)
+  ios: true             #  iOS 图标配置 (true 表示启用)
+  image_path: "assets/icon/icon.png" # 你的图标文件路径
+  # 可选的 Android 自适应图标配置
+#  adaptive_icon_background: "#ffffff"  # 自适应图标背景颜色 (十六进制颜色代码)
+#  adaptive_icon_foreground: "assets/icon/icon_adaptive_fore.png" # 自适应图标前景图 (可选)

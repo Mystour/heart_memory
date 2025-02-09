@@ -88,11 +88,15 @@ class AppTheme{
       hintStyle: const TextStyle(color: Colors.white54), // 提示文字颜色
     ),
     textTheme: const TextTheme(
-      bodyLarge: TextStyle(color: Colors.white), // 设置bodyText1的颜色
-      bodyMedium: TextStyle(color: Colors.white70), // 设置bodyText2的颜色
-      // ... 其他文本样式 ...
+      bodyLarge: TextStyle(color: Colors.white),
+      bodyMedium: TextStyle(color: Colors.white70),
     ),
-    iconTheme: const IconThemeData(color: Colors.white70), // 图标颜色
-  );
+    iconTheme: const IconThemeData(color: Colors.white70),
 
+    // 添加 ListTileTheme
+    listTileTheme: const ListTileThemeData(
+      textColor: Colors.white, // 设置 ListTile 文本颜色
+      //iconColor: Colors.white70, // 如果需要，也可以设置图标颜色
+    ),
+  );
 }

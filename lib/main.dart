@@ -30,7 +30,7 @@ class MyApp extends StatelessWidget {
     return Consumer<SettingsProvider>(
       builder: (context, settings, child) {
         return MaterialApp(
-          title: '心动瞬间',
+          title: '菜花回忆', //修改应用标题
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
           themeMode: settings.themeMode, // 根据 SettingsProvider 中的 themeMode 设置

@@ -1,31 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:heart_memory/services/appwrite_service.dart';
 import 'package:provider/provider.dart';
-import 'package:heart_memory/providers/settings_provider.dart'; // 引入 SettingsProvider
+import 'package:heart_memory/providers/settings_provider.dart';
 import 'package:heart_memory/models/user.dart';
 
 class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({super.key});
+  const SettingsScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    //final settings = Provider.of<SettingsProvider>(context); // 获取 SettingsProvider
-    final settings = context.watch<SettingsProvider>(); //更简洁
+    final settings = context.watch<SettingsProvider>();
     return Scaffold(
       appBar: AppBar(
         title: const Text('设置'),
       ),
       body: ListView(
         children: [
-          // 主题切换
           ListTile(
             title: const Text('主题'),
             trailing: const Icon(Icons.arrow_forward_ios),
             onTap: () {
-              _showThemeDialog(context, settings); // 显示主题选择对话框
+              _showThemeDialog(context, settings);
             },
           ),
-          // 通知设置
           SwitchListTile(
             title: const Text('通知'),
             value: settings.notificationsEnabled,
@@ -33,7 +30,6 @@ class SettingsScreen extends StatelessWidget {
               settings.setNotificationsEnabled(value);
             },
           ),
-          // 纪念日提醒
           SwitchListTile(
             title: const Text('纪念日提醒'),
             value: settings.anniversaryRemindersEnabled,
@@ -41,7 +37,6 @@ class SettingsScreen extends StatelessWidget {
               settings.setAnniversaryRemindersEnabled(value);
             },
           ),
-          // 账号
           FutureBuilder<User?>(
             future: AppwriteService.instance.getCurrentUser(),
             builder: (context, snapshot) {
@@ -50,34 +45,31 @@ class SettingsScreen extends StatelessWidget {
                 final user = snapshot.data!;
                 return ListTile(
                   title: const Text('账号'),
-                  subtitle: Text('${user.name} (${user.email})'),
-                  trailing:  TextButton(
+                  subtitle: Text('小陈子 (${user.email})'), // 使用你的昵称
+                  trailing: TextButton(
                     child: const Text('退出登录'),
-                    onPressed: () async{
+                    onPressed: () async {
                       await AppwriteService.instance.logout();
                       Navigator.pushReplacementNamed(context, '/login');
                     },
                   ),
                 );
               } else {
-                return const SizedBox.shrink(); // 不显示账号信息
+                return const SizedBox.shrink();
               }
             },
           ),
-
-          // 关于
           ListTile(
             title: const Text('关于'),
             onTap: () {
-              _showAboutDialog(context); // 显示关于对话框
+              _showAboutDialog(context);
             },
           ),
-          // 可以在这里添加更多设置项...
         ],
       ),
     );
   }
-  // 显示主题选择对话框
+
   void _showThemeDialog(BuildContext context, SettingsProvider settings) {
     showDialog(
       context: context,
@@ -85,7 +77,7 @@ class SettingsScreen extends StatelessWidget {
         return AlertDialog(
           title: const Text('选择主题'),
           content: Column(
-            mainAxisSize: MainAxisSize.min, // 使对话框内容尽可能小
+            mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
                 title: const Text('浅色模式'),
@@ -118,17 +110,21 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  // 显示关于对话框
+
   void _showAboutDialog(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark; //判断是否是深色模式
     showAboutDialog(
       context: context,
-      applicationName: '心动瞬间',
-      applicationVersion: '1.0.0', // 版本号
-      applicationIcon: const Icon(Icons.favorite), // 应用图标
-      applicationLegalese: '© 2025 陈子昂/花菜组合', // 版权信息
+      applicationName: '菜花回忆',
+      applicationVersion: '1.0.0',
+      applicationIcon: const Icon(Icons.favorite),
+      applicationLegalese: '© 2025 小陈子 & 小郑子 (菜花组合)',
       children: [
-        // 可以在这里添加更多关于信息，例如隐私政策链接、服务条款链接等
-        const Text('这是一个记录你和你的另一半美好回忆的应用。'),
+        // 不再需要 Theme 包裹，直接设置 style
+        Text(
+          '这是小陈子送给小郑子的专属回忆记录应用，记录我们在一起的点点滴滴。',
+          style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.black87), // 动态设置颜色
+        ),
       ],
     );
   }

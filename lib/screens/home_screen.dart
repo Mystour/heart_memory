@@ -1,13 +1,14 @@
+// screens/home_screen.dart
 import 'package:flutter/material.dart';
 import 'package:heart_memory/screens/login_screen.dart';
-import 'package:heart_memory/screens/settings_screen.dart';
 import 'package:heart_memory/screens/timeline_screen.dart';
 import 'package:heart_memory/services/appwrite_service.dart';
 import 'package:heart_memory/models/user.dart';
+import 'package:heart_memory/screens/settings_screen.dart';
+import 'package:heart_memory/screens/anniversary_screen.dart';
+import 'package:heart_memory/screens/album_screen.dart';
+import 'package:heart_memory/screens/message_screen.dart';
 
-import 'album_screen.dart';
-import 'anniversary_screen.dart';
-import 'message_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -34,22 +35,23 @@ class _HomeScreenState extends State<HomeScreen> {
         _isLoading = false;
       });
     } catch (e) {
-      // 处理错误，例如导航到登录页面
       setState(() {
         _isLoading = false;
       });
     }
   }
 
-  // 构建抽屉 (Drawer)
   Widget _buildDrawer(BuildContext context) {
+    // 判断当前是否为深色模式
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Drawer(
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
           UserAccountsDrawerHeader(
             accountName: Text(_user?.name ?? "未登录"),
-            accountEmail: Text(_user != null ? "已登录" : ""), // 可以显示用户的邮箱，如果没有，可以留空
+            accountEmail: Text(_user != null ? "已登录" : ""),
             currentAccountPicture: CircleAvatar(
               backgroundImage: _user?.avatarUrl != null
                   ? NetworkImage(_user!.avatarUrl!)
@@ -58,79 +60,103 @@ class _HomeScreenState extends State<HomeScreen> {
                   ? const Icon(Icons.person, size: 40)
                   : null,
             ),
+            decoration: BoxDecoration(
+              color: Theme.of(context).primaryColor,
+            ),
           ),
-          ListTile(
-            leading: const Icon(Icons.timeline),
-            title: const Text('回忆墙'),
-            onTap: () {
-              Navigator.pop(context); // 关闭抽屉
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const TimelineScreen()),
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.calendar_today),
-            title: const Text('纪念日'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const AnniversaryScreen()));
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.photo_album),
-            title: const Text('相册'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const AlbumScreen()),
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.message),
-            title: const Text('消息'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const MessageScreen()),
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.settings),
-            title: const Text('设置'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (context) => const SettingsScreen()));
-            },
-          ),
-          const Divider(), // 分隔线
-          ListTile(
-            leading: const Icon(Icons.logout),
-            title: const Text('退出登录'),
-            onTap: () async {
-              try {
-                await AppwriteService.instance.logout();
-                setState(() {
-                  _user = null; // 更新 UI
-                });
-                Navigator.pushReplacement(context,
-                    MaterialPageRoute(builder: (context) => const LoginScreen()));
-              } catch (e) {
-                // 处理错误
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('退出登录失败: $e')),
-                );
-              }
-            },
+          // 不再需要 Theme 包裹，直接在 ListTile 中设置
+          Column(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.timeline),
+                title: Text('回忆墙',
+                    style: TextStyle(
+                        color: isDarkMode ? Colors.white : Colors.black)), // 动态设置颜色
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const TimelineScreen()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.calendar_today),
+                title: Text('纪念日',
+                    style: TextStyle(
+                        color: isDarkMode ? Colors.white : Colors.black)),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const AnniversaryScreen()));
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_album),
+                title: Text('相册',
+                    style: TextStyle(
+                        color: isDarkMode ? Colors.white : Colors.black)),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const AlbumScreen()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.message),
+                title: Text('消息',
+                    style: TextStyle(
+                        color: isDarkMode ? Colors.white : Colors.black)),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const MessageScreen()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.settings),
+                title: Text('设置',
+                    style: TextStyle(
+                        color: isDarkMode ? Colors.white : Colors.black)),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const SettingsScreen()));
+                },
+              ),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.logout),
+                title: Text('退出登录',
+                    style: TextStyle(
+                        color: isDarkMode ? Colors.white : Colors.black)),
+                onTap: () async {
+                  try {
+                    await AppwriteService.instance.logout();
+                    setState(() {
+                      _user = null;
+                    });
+                    Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const LoginScreen()));
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('退出登录失败: $e')),
+                    );
+                  }
+                },
+              ),
+            ],
           ),
         ],
       ),
@@ -141,17 +167,14 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('心动瞬间'),
+        title: const Text('菜花回忆'),
       ),
-      drawer: _user != null ? _buildDrawer(context) : null, // 已登录才显示抽屉
+      drawer: _user != null ? _buildDrawer(context) : null,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _user == null
-          ? const LoginScreen() // 未登录，显示登录页面
-          : const TimelineScreen(), // 已登录，显示时间轴 (或其他主页面)
-      // Center(
-      //     child: Text('欢迎回来, ${_user!.name}!'), // 简单的欢迎信息
-      //   ),
+          ? const LoginScreen()
+          : const TimelineScreen(),
     );
   }
 }
