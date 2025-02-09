@@ -3,15 +3,22 @@ import 'package:heart_memory/screens/home_screen.dart';
 import 'package:heart_memory/services/appwrite_service.dart';
 import 'package:heart_memory/utils/app_constants.dart';
 import 'package:heart_memory/utils/theme.dart';
+import 'package:provider/provider.dart'; // 引入 provider
+import 'package:heart_memory/providers/settings_provider.dart'; // 引入 SettingsProvider
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // 初始化 Appwrite
   await AppwriteService.instance.initialize(
     endpoint: AppConstants.appwriteEndpoint,
     projectId: AppConstants.appwriteProjectId,
   );
 
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider( // 使用 ChangeNotifierProvider
+      create: (context) => SettingsProvider(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -19,12 +26,18 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: '心动瞬间',
-      theme: AppTheme.lightTheme, // 使用自定义主题
-      darkTheme: AppTheme.darkTheme,
-      home: HomeScreen(),
-      debugShowCheckedModeBanner: false, // 移除debug标志
+    // 使用 Consumer 获取 SettingsProvider
+    return Consumer<SettingsProvider>(
+      builder: (context, settings, child) {
+        return MaterialApp(
+          title: '心动瞬间',
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: settings.themeMode, // 根据 SettingsProvider 中的 themeMode 设置
+          home: const HomeScreen(),
+          debugShowCheckedModeBanner: false,
+        );
+      },
     );
   }
 }

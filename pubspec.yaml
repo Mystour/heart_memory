@@ -47,6 +47,7 @@ dependencies:
   home_widget: ^0.7.0
 #  flutter_web_auth_2: ^4.1.0
   flutter_plugin_android_lifecycle: ^2.0.24
+  provider: ^6.1.2
 
 dependency_overrides:
   flutter_web_auth_2: ^4.1.0 # 正确：在这里覆盖版本
