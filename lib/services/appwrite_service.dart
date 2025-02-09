@@ -421,7 +421,7 @@ class AppwriteService {
 
   // ---------- 情侣绑定相关 ----------
 
-  // 创建情侣关系
+  // 创建情侣关系 (修改)
   Future<Couple> createCouple(String user1Id, String user2Id) async {
     try {
       final document = await _databases.createDocument(
@@ -429,8 +429,8 @@ class AppwriteService {
         collectionId: 'couples',
         documentId: ID.unique(),
         data: {
-          'user1Id': user1Id,
-          'user2Id': user2Id,
+          'user1Id': [user1Id], // 放入数组中
+          'user2Id': [user2Id], // 放入数组中
         },
       );
       return Couple.fromMap(document.data);
@@ -438,16 +438,15 @@ class AppwriteService {
       rethrow;
     }
   }
-
-  // 根据用户 ID 获取情侣关系
+// 根据用户 ID 获取情侣关系 (修改)
   Future<Couple?> getCoupleByUser(String userId) async {
     try {
       final documents = await _databases.listDocuments(
         databaseId: AppConstants.databaseId,
         collectionId: 'couples',
         queries: [
-          Query.search('user1Id', [userId] as String),
-          Query.search('user2Id', [userId] as String),
+          Query.equal('user1Id', [userId]), // 使用 Query.equal 和数组
+          Query.equal('user2Id', [userId]), // 使用 Query.equal 和数组
         ],
       );
 

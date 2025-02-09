@@ -5,7 +5,6 @@ import 'package:heart_memory/providers/settings_provider.dart';
 import 'package:heart_memory/models/user.dart';
 import 'package:heart_memory/models/couple.dart';
 
-
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
 
@@ -14,7 +13,7 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  final _partnerEmailController = TextEditingController(); // 用于输入对方邮箱的控制器
+  final _partnerEmailController = TextEditingController();
   User? _currentUser;
   Couple? _couple;
   User? _partner;
@@ -23,56 +22,63 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
-    _loadCurrentUser(); // 在 initState 中加载当前用户信息
   }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _loadCurrentUser(); // 在 didChangeDependencies 中加载当前用户信息
+  }
+
   @override
   void dispose() {
     _partnerEmailController.dispose();
     super.dispose();
   }
 
-  // 加载当前用户信息和情侣信息
   Future<void> _loadCurrentUser() async {
     setState(() {
-      _isLoading = true; // 开始加载
+      _isLoading = true;
     });
 
     try {
       final user = await AppwriteService.instance.getCurrentUser();
       if (user != null) {
-        final couple = await AppwriteService.instance.getCoupleByUser(user.id);
+        final couple =
+        await AppwriteService.instance.getCoupleByUser(user.id);
         User? partner;
-        if(couple != null){
-          if(couple.user1Id != user.id){
-            partner = await AppwriteService.instance.getUserById(couple.user1Id);
+        if (couple != null) {
+          if (couple.user1Id[0] != user.id) {
+            partner =
+            await AppwriteService.instance.getUserById(couple.user1Id[0]);
           } else {
-            partner = await AppwriteService.instance.getUserById(couple.user2Id);
+            partner =
+            await AppwriteService.instance.getUserById(couple.user2Id[0]);
           }
         }
         setState(() {
           _currentUser = user;
           _couple = couple;
           _partner = partner;
-          _isLoading = false; // 加载完成
+          _isLoading = false;
         });
       } else {
         setState(() {
-          _isLoading = false; // 加载完成
+          _isLoading = false;
         });
       }
     } catch (e) {
       setState(() {
-        _isLoading = false; // 加载失败
+        _isLoading = false;
       });
-      // 处理错误
       print("Error loading user or couple: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('获取用户信息失败: $e')),
       );
+      return; // 重要：阻止进一步执行
     }
   }
 
-  // 显示绑定情侣的对话框
   void _showBindCoupleDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -96,17 +102,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onPressed: () async {
                 final partnerEmail = _partnerEmailController.text;
                 if (partnerEmail.isNotEmpty) {
-                  // 根据邮箱查找对方用户 ID
                   final partnerId =
                   await AppwriteService.instance.findUserIdByEmail(partnerEmail);
                   if (partnerId != null) {
-                    // 创建情侣关系
                     try {
                       await AppwriteService.instance.createCouple(
                         _currentUser!.id,
                         partnerId,
                       );
-                      // 刷新界面
                       _loadCurrentUser();
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('情侣绑定成功！')),
@@ -130,9 +133,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       },
     );
   }
-  // 显示修改昵称的对话框
+
   void _showChangeNicknameDialog(BuildContext context) {
-    final _newNicknameController = TextEditingController(); // 用于输入新昵称的控制器
+    final _newNicknameController = TextEditingController();
 
     showDialog(
       context: context,
@@ -158,7 +161,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   try {
                     await AppwriteService.instance
                         .updateUserName(_currentUser!.id, newNickname);
-                    // 更新成功，刷新用户信息
                     _loadCurrentUser();
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('昵称修改成功！')),
@@ -178,13 +180,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // 解除绑定
   Future<void> _unbindCouple(BuildContext context) async {
     if (_couple == null) return;
 
     try {
       await AppwriteService.instance.deleteCouple(_couple!.id);
-      // 刷新
       _loadCurrentUser();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('已解除绑定')),
@@ -195,6 +195,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
     }
   }
+
   void _showThemeDialog(BuildContext context, SettingsProvider settings) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     showDialog(
@@ -206,7 +207,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                title:  Text('浅色模式', style: TextStyle(color: isDarkMode ? Colors.white : Colors.black)),
+                title: Text('浅色模式',
+                    style: TextStyle(
+                        color: isDarkMode ? Colors.white : Colors.black)),
                 leading: const Icon(Icons.light_mode),
                 onTap: () {
                   settings.setThemeMode(ThemeMode.light);
@@ -214,7 +217,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 },
               ),
               ListTile(
-                title:  Text('深色模式', style: TextStyle(color: isDarkMode ? Colors.white : Colors.black)),
+                title: Text('深色模式',
+                    style: TextStyle(
+                        color: isDarkMode ? Colors.white : Colors.black)),
                 leading: const Icon(Icons.dark_mode),
                 onTap: () {
                   settings.setThemeMode(ThemeMode.dark);
@@ -222,7 +227,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 },
               ),
               ListTile(
-                title:  Text('跟随系统', style: TextStyle(color: isDarkMode ? Colors.white : Colors.black)),
+                title: Text('跟随系统',
+                    style: TextStyle(
+                        color: isDarkMode ? Colors.white : Colors.black)),
                 leading: const Icon(Icons.brightness_auto),
                 onTap: () {
                   settings.setThemeMode(ThemeMode.system);
@@ -235,6 +242,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       },
     );
   }
+
   void _showAboutDialog(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     showAboutDialog(
@@ -251,6 +259,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ],
     );
   }
+
   @override
   Widget build(BuildContext context) {
     final settings = context.watch<SettingsProvider>();
@@ -260,7 +269,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title: const Text('设置'),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator()) // 显示加载指示器
+          ? const Center(child: CircularProgressIndicator())
           : ListView(
         children: [
           ListTile(
@@ -286,45 +295,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           ListTile(
             title: const Text('账号'),
-            subtitle:  Text(_currentUser != null ? '${_currentUser!.nickname ?? _currentUser!.name} (${_currentUser!.email})'
-                : '未登录'), // 显示昵称，如果没有昵称，则显示用户名
-            trailing:  TextButton(
+            subtitle: Text(_currentUser != null
+                ? '${_currentUser!.nickname ?? _currentUser!.name} (${_currentUser!.email})'
+                : '未登录'),
+            trailing: TextButton(
               child: const Text('退出登录'),
               onPressed: () async {
                 await AppwriteService.instance.logout();
-                // ignore: use_build_context_synchronously
                 Navigator.pushReplacementNamed(context, '/login');
               },
             ),
           ),
-          // 修改昵称
           ListTile(
             title: const Text('修改昵称'),
             trailing: const Icon(Icons.arrow_forward_ios),
             onTap: () {
-              _showChangeNicknameDialog(context); // 显示修改昵称对话框
+              _showChangeNicknameDialog(context);
             },
           ),
-          // 情侣绑定/解除绑定
           if (_currentUser != null)
             ListTile(
-              title:  Text(_couple == null ? '绑定情侣' : '解除绑定'), // 根据是否已绑定显示不同的文本
+              title: Text(_couple == null ? '绑定情侣' : '解除绑定'),
               trailing: const Icon(Icons.arrow_forward_ios),
               onTap: () {
                 if (_couple == null) {
-                  _showBindCoupleDialog(context); // 显示绑定情侣对话框
+                  _showBindCoupleDialog(context);
                 } else {
-                  _unbindCouple(context); // 解除绑定
+                  _unbindCouple(context);
                 }
               },
             ),
-          // 如果已绑定，显示对方信息
           if (_couple != null && _partner != null)
             ListTile(
               title: const Text('情侣信息'),
-              subtitle: Text('${_partner!.nickname ?? _partner!.name} (${_partner!.email})'),
+              subtitle: Text(
+                  '${_partner!.nickname ?? _partner!.name} (${_partner!.email})'),
             ),
-
           ListTile(
             title: const Text('关于'),
             onTap: () {
