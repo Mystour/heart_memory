@@ -71,6 +71,7 @@ class SettingsScreen extends StatelessWidget {
   }
 
   void _showThemeDialog(BuildContext context, SettingsProvider settings) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark; //判断是否是深色模式
     showDialog(
       context: context,
       builder: (context) {
@@ -80,7 +81,9 @@ class SettingsScreen extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                title: const Text('浅色模式'),
+                title: Text('浅色模式',
+                    style: TextStyle(
+                        color: isDarkMode ? Colors.white : Colors.black)),
                 leading: const Icon(Icons.light_mode),
                 onTap: () {
                   settings.setThemeMode(ThemeMode.light);
@@ -88,7 +91,9 @@ class SettingsScreen extends StatelessWidget {
                 },
               ),
               ListTile(
-                title: const Text('深色模式'),
+                title: Text('深色模式',
+                    style: TextStyle(
+                        color: isDarkMode ? Colors.white : Colors.black)),
                 leading: const Icon(Icons.dark_mode),
                 onTap: () {
                   settings.setThemeMode(ThemeMode.dark);
@@ -96,7 +101,9 @@ class SettingsScreen extends StatelessWidget {
                 },
               ),
               ListTile(
-                title: const Text('跟随系统'),
+                title: Text('跟随系统',
+                    style: TextStyle(
+                        color: isDarkMode ? Colors.white : Colors.black)),
                 leading: const Icon(Icons.brightness_auto),
                 onTap: () {
                   settings.setThemeMode(ThemeMode.system);
@@ -109,7 +116,6 @@ class SettingsScreen extends StatelessWidget {
       },
     );
   }
-
 
   void _showAboutDialog(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark; //判断是否是深色模式
