@@ -8,8 +8,6 @@ import 'package:heart_memory/screens/settings_screen.dart';
 import 'package:heart_memory/screens/anniversary_screen.dart';
 import 'package:heart_memory/screens/album_screen.dart';
 import 'package:heart_memory/screens/message_screen.dart';
-
-
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
 
@@ -35,23 +33,25 @@ class _HomeScreenState extends State<HomeScreen> {
         _isLoading = false;
       });
     } catch (e) {
+      // 处理错误，例如导航到登录页面
       setState(() {
         _isLoading = false;
       });
     }
   }
 
+  // 构建抽屉 (Drawer)
   Widget _buildDrawer(BuildContext context) {
     // 判断当前是否为深色模式
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Drawer(
-      child: ListView(
+        child: ListView(
         padding: EdgeInsets.zero,
         children: [
           UserAccountsDrawerHeader(
-            accountName: Text(_user?.name ?? "未登录"),
-            accountEmail: Text(_user != null ? "已登录" : ""),
+            accountName: Text(_user?.nickname ?? _user?.name ?? "未登录"),
+            accountEmail: Text(_user?.email ?? ""), // 即使 _user 为 null 也提供一个值
             currentAccountPicture: CircleAvatar(
               backgroundImage: _user?.avatarUrl != null
                   ? NetworkImage(_user!.avatarUrl!)
@@ -60,10 +60,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   ? const Icon(Icons.person, size: 40)
                   : null,
             ),
-            decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor,
-            ),
+          decoration: BoxDecoration(
+            color: Theme.of(context).primaryColor,
           ),
+        ),
           // 不再需要 Theme 包裹，直接在 ListTile 中设置
           Column(
             children: [
@@ -159,7 +159,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ],
-      ),
+        ),
     );
   }
 

@@ -1,33 +1,51 @@
 class User {
   String id;
   String name;
-  String email; // 添加 email 字段
+  String email;
+  String? nickname;
   String? avatarUrl;
 
   User({
     required this.id,
     required this.name,
-    required this.email, // 添加 email
+    required this.email,
+    this.nickname,
     this.avatarUrl,
   });
 
-  // 从 Map 创建 User 对象 (用于从 Appwrite Document 中创建)
   factory User.fromMap(Map<String, dynamic> map) {
     return User(
       id: map['\$id'] ?? '',
       name: map['name'] ?? '',
-      email: map['email'] ?? '', // 从 map 中获取 email
+      email: map['email'] ?? '',
+      nickname: map['nickname'],
       avatarUrl: map['avatarUrl'],
     );
   }
 
-  // 将 User 对象转换为 Map (用于创建/更新 Appwrite Document)
   Map<String, dynamic> toMap() {
     return {
       'name': name,
       'email': email,
+      'nickname': nickname,
       'avatarUrl': avatarUrl,
-      // 注意：这里不需要包含 $id，Appwrite 会自动处理
     };
+  }
+
+  // 添加 copyWith 方法
+  User copyWith({
+    String? id,
+    String? name,
+    String? email,
+    String? nickname,
+    String? avatarUrl,
+  }) {
+    return User(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      nickname: nickname ?? this.nickname,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
+    );
   }
 }

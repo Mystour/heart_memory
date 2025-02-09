@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:heart_memory/screens/login_screen.dart';
+import 'package:heart_memory/screens/home_screen.dart';
 import 'package:heart_memory/services/appwrite_service.dart';
 
-import 'home_screen.dart';
+import 'login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({Key? key}) : super(key: key);
@@ -13,7 +13,7 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
+  final _nameController = TextEditingController(); // 用户名
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
@@ -34,12 +34,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
               TextFormField(
                 controller: _nameController,
                 decoration: const InputDecoration(
-                  labelText: '昵称',
+                  labelText: '用户名', // 保留用户名输入框
                   border: OutlineInputBorder(),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return '请输入昵称';
+                    return '请输入用户名';
                   }
                   return null;
                 },
@@ -81,17 +81,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 },
               ),
               const SizedBox(height: 24),
-              _isLoading ? const CircularProgressIndicator() : ElevatedButton(
+              _isLoading
+                  ? const CircularProgressIndicator()
+                  : ElevatedButton(
                 onPressed: _register,
                 child: const Text('注册'),
               ),
               const SizedBox(height: 16),
               TextButton(
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const LoginScreen()),
-                  );
+                  Navigator.pop(context);
                 },
                 child: const Text('已有账号？去登录'),
               ),
@@ -102,40 +101,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  // screens/register_screen.dart
   Future<void> _register() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
         _isLoading = true;
       });
       try {
+        // 移除昵称参数
         await AppwriteService.instance.register(
           _nameController.text,
           _emailController.text,
           _passwordController.text,
         );
 
-        // 注册成功后的处理
         setState(() {
           _isLoading = false;
         });
-
-        // 显示注册成功提示 (SnackBar)
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('注册成功，已自动登录！'),
-            duration: Duration(seconds: 2), // 可选，设置显示时长
-          ),
+          const SnackBar(content: Text('注册成功！')),
         );
-
-        // 延迟跳转到主页 (可选，给用户一点时间看到提示)
-        Future.delayed(const Duration(seconds: 2), () {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const HomeScreen()),
-          );
-        });
-
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        );
       } catch (e) {
         setState(() {
           _isLoading = false;
