@@ -33,7 +33,6 @@ class AppwriteService {
 
     await _checkSession();
   }
-
   Future<void> _checkSession() async {
     try {
       final appwriteUser = await _account.get();
@@ -356,12 +355,19 @@ class AppwriteService {
       //  先尝试获取现有会话，如果存在，则不进行登录操作直接返回
       final appwriteUser = await _account.get();
       _currentUserId = appwriteUser.$id;
-      _currentUser = User.fromMap({
-        '\$id': appwriteUser.$id,
-        'name': appwriteUser.name,
-        'email': appwriteUser.email,
-        'nickname': appwriteUser.prefs.data['nickname'],
-      });
+      //  从users集合中获取用户信息
+      final userDoc = await _databases.listDocuments(
+          databaseId: AppConstants.databaseId,
+          collectionId: "users",
+          queries: [
+            Query.equal('\$id', appwriteUser.$id),
+          ]
+      );
+      if(userDoc.documents.isNotEmpty){
+        _currentUser = User.fromMap(userDoc.documents.first.data); // 使用 User.fromMap
+      }
+      //  如果_currentUser为空，抛出异常
+      if(_currentUser == null) throw Exception("User information not found in 'users' collection.");
       return _currentUser!;
     } on AppwriteException catch (e) {
       // 如果出现 AppwriteException 异常，说明没有有效会话，需要进行登录
@@ -380,6 +386,8 @@ class AppwriteService {
         if(userDoc.documents.isNotEmpty){
           _currentUser = User.fromMap(userDoc.documents.first.data); // 使用 User.fromMap
         }
+        //  如果_currentUser为空，抛出异常
+        if(_currentUser == null) throw Exception("User information not found in 'users' collection.");
         return _currentUser!;
       }
       rethrow;
@@ -399,10 +407,31 @@ class AppwriteService {
           name: name
       );
 
+      // 在 users 集合中创建文档
+      await _databases.createDocument(
+        databaseId: AppConstants.databaseId,
+        collectionId: 'users',
+        documentId: appwriteUser.$id, // 使用 Auth 用户的 $id 作为文档 ID
+        data: {
+          'userId': appwriteUser.$id, // 存储 Auth 用户的 $id
+          'name': name,           // 存储用户名
+          'email': email,        // 存储邮箱
+          // 其他需要的用户信息...
+        },
+        // 设置适当的权限
+        permissions: [
+          Permission.read(Role.user(appwriteUser.$id)),
+          Permission.update(Role.user(appwriteUser.$id)),
+          Permission.delete(Role.user(appwriteUser.$id)),
+        ],
+      );
+
       //注意这里注册成功后立即登录了
       final session = await _account.createEmailPasswordSession(email: email, password: password);
       _currentUserId = appwriteUser.$id;
       _currentUser = await getCurrentUser(); // 转换为自定义的User对象
+      //  如果_currentUser为空，抛出异常
+      if(_currentUser == null) throw Exception("User information not found in 'users' collection.");
       return _currentUser!;
     } catch (e) {
       rethrow;
@@ -438,15 +467,16 @@ class AppwriteService {
       rethrow;
     }
   }
-// 根据用户 ID 获取情侣关系 (修改)
+
+  // 根据用户 ID 获取情侣关系 (修改)
   Future<Couple?> getCoupleByUser(String userId) async {
     try {
       final documents = await _databases.listDocuments(
         databaseId: AppConstants.databaseId,
         collectionId: 'couples',
         queries: [
-          Query.equal('user1Id', [userId]), // 使用 Query.equal 和数组
-          Query.equal('user2Id', [userId]), // 使用 Query.equal 和数组
+          Query.equal('user1Id', [userId]), //  移除类型转换
+          Query.equal('user2Id', [userId]), //  移除类型转换
         ],
       );
 

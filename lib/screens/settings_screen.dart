@@ -78,7 +78,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       return; // 重要：阻止进一步执行
     }
   }
-
+  // 显示绑定情侣的对话框 (修改)
   void _showBindCoupleDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -106,15 +106,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   await AppwriteService.instance.findUserIdByEmail(partnerEmail);
                   if (partnerId != null) {
                     try {
-                      await AppwriteService.instance.createCouple(
-                        _currentUser!.id,
-                        partnerId,
-                      );
-                      _loadCurrentUser();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('情侣绑定成功！')),
-                      );
-                      Navigator.pop(context);
+                      if (_currentUser != null) {
+                        await AppwriteService.instance.createCouple(
+                          _currentUser!.id,
+                          partnerId,
+                        );
+                        _loadCurrentUser();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('情侣绑定成功！')),
+                        );
+                        Navigator.pop(context);
+                      } else {
+                        // 处理 _currentUser 为 null 的情况，例如显示错误信息
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('无法绑定：当前用户信息为空')),
+                        );
+                      }
                     } catch (e) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('绑定失败: $e')),
@@ -133,7 +141,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       },
     );
   }
-
+  // 显示修改昵称的对话框 (修改)
   void _showChangeNicknameDialog(BuildContext context) {
     final _newNicknameController = TextEditingController();
 
@@ -159,13 +167,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 final newNickname = _newNicknameController.text;
                 if (newNickname.isNotEmpty) {
                   try {
-                    await AppwriteService.instance
-                        .updateUserName(_currentUser!.id, newNickname);
-                    _loadCurrentUser();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('昵称修改成功！')),
-                    );
-                    Navigator.pop(context);
+                    if (_currentUser != null) {
+                      await AppwriteService.instance
+                          .updateUserName(_currentUser!.id, newNickname);
+                      _loadCurrentUser();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('昵称修改成功！')),
+                      );
+                      Navigator.pop(context);
+                    }
+                    else{
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text('无法修改昵称：当前用户信息为空')),
+                      );
+                    }
                   } catch (e) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text('昵称修改失败: $e')),
@@ -247,7 +263,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     showAboutDialog(
       context: context,
-      applicationName: '菜花的回忆',
+      applicationName: '菜花回忆',
       applicationVersion: '1.0.0',
       applicationIcon: const Icon(Icons.favorite),
       applicationLegalese: '© 2025 小陈子 & 小郑子 (菜花组合)',

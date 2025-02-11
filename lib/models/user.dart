@@ -31,8 +31,6 @@ class User {
       'avatarUrl': avatarUrl,
     };
   }
-
-  // 添加 copyWith 方法
   User copyWith({
     String? id,
     String? name,
