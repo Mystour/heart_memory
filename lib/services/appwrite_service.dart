@@ -1,13 +1,12 @@
 import 'dart:typed_data';
 
 import 'package:appwrite/appwrite.dart';
-import 'package:appwrite/models.dart' as models;
 import 'package:heart_memory/models/memory.dart';
 import 'package:heart_memory/models/anniversary.dart';
 import 'package:heart_memory/models/message.dart';
 import 'package:heart_memory/models/user.dart';
 import 'package:heart_memory/utils/app_constants.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
 import 'package:heart_memory/models/couple.dart';
 
 class AppwriteService {
@@ -33,6 +32,7 @@ class AppwriteService {
 
     await _checkSession();
   }
+
   Future<void> _checkSession() async {
     try {
       final appwriteUser = await _account.get();
@@ -347,7 +347,6 @@ class AppwriteService {
       rethrow;
     }
   }
-
   // ---------- 用户认证相关 ----------
   // 登录
   Future<User> login(String email, String password) async {
@@ -396,7 +395,6 @@ class AppwriteService {
       rethrow;
     }
   }
-
   //注册
   Future<User> register(String name,String email, String password) async {  // 移除 nickname 参数
     try {
@@ -405,25 +403,6 @@ class AppwriteService {
           email: email,
           password: password,
           name: name
-      );
-
-      // 在 users 集合中创建文档
-      await _databases.createDocument(
-        databaseId: AppConstants.databaseId,
-        collectionId: 'users',
-        documentId: appwriteUser.$id, // 使用 Auth 用户的 $id 作为文档 ID
-        data: {
-          'userId': appwriteUser.$id, // 存储 Auth 用户的 $id
-          'name': name,           // 存储用户名
-          'email': email,        // 存储邮箱
-          // 其他需要的用户信息...
-        },
-        // 设置适当的权限
-        permissions: [
-          Permission.read(Role.user(appwriteUser.$id)),
-          Permission.update(Role.user(appwriteUser.$id)),
-          Permission.delete(Role.user(appwriteUser.$id)),
-        ],
       );
 
       //注意这里注册成功后立即登录了
