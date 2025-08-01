@@ -1,12 +1,13 @@
 import 'dart:typed_data';
 
 import 'package:appwrite/appwrite.dart';
+import 'package:appwrite/models.dart' as models;
 import 'package:heart_memory/models/memory.dart';
 import 'package:heart_memory/models/anniversary.dart';
 import 'package:heart_memory/models/message.dart';
 import 'package:heart_memory/models/user.dart';
 import 'package:heart_memory/utils/app_constants.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:heart_memory/models/couple.dart';
 
 class AppwriteService {
@@ -347,6 +348,7 @@ class AppwriteService {
       rethrow;
     }
   }
+
   // ---------- 用户认证相关 ----------
   // 登录
   Future<User> login(String email, String password) async {
@@ -395,6 +397,7 @@ class AppwriteService {
       rethrow;
     }
   }
+
   //注册
   Future<User> register(String name,String email, String password) async {  // 移除 nickname 参数
     try {
@@ -405,10 +408,12 @@ class AppwriteService {
           name: name
       );
 
-      //注意这里注册成功后立即登录了
-      final session = await _account.createEmailPasswordSession(email: email, password: password);
+      //注意这里注册成功后立即登录了,现在不立即登录了
+      // final session = await _account.createEmailPasswordSession(email: email, password: password);
       _currentUserId = appwriteUser.$id;
-      _currentUser = await getCurrentUser(); // 转换为自定义的User对象
+      await Future.delayed(Duration(seconds: 2)); // 等待云函数执行
+      _currentUser = await getCurrentUser();
+
       //  如果_currentUser为空，抛出异常
       if(_currentUser == null) throw Exception("User information not found in 'users' collection.");
       return _currentUser!;

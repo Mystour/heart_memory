@@ -12,7 +12,7 @@ module.exports = async function (req, res) {
   client
     .setEndpoint(req.variables['APPWRITE_ENDPOINT'])
     .setProject(req.variables['APPWRITE_PROJECT_ID'])
-    .setKey(req.variables['standard_d6665bd9ba3c4896324f153b42492a4f712af91e6e2958a666c2d6b668f4839b068f2057dd7f9e82f077094bb937e0fb9ade5ced2cf03124005cfa04b2f5efbdf319c1fbd6d09796b1aa650581fed6adf723376d619c97ff46680dfdff9b79850948c9b535c02e255d3d88466a55a8b01c52af834273c453c35a92678283d7f2]); // 使用 API Key
+    .setKey(req.variables['APPWRITE_API_KEY']);
 
   // 获取触发事件的 payload
   const payload = JSON.parse(req.payload);
