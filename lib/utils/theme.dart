@@ -9,7 +9,7 @@ class AppTheme{
       foregroundColor: Colors.white, // 导航栏文字白色
       iconTheme: IconThemeData(color: Colors.white), // 导航栏图标白色
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: Colors.white, // 卡片白色
       elevation: 4.0, // 卡片阴影
       shape: RoundedRectangleBorder(
@@ -52,7 +52,7 @@ class AppTheme{
       foregroundColor: Colors.white, // 导航栏文字白色
       iconTheme: IconThemeData(color: Colors.white), // 导航栏图标白色
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: const Color(0xFF1E1E1E), // 卡片深色
       elevation: 4.0,
       shape: RoundedRectangleBorder(
