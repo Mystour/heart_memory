@@ -1,52 +1,65 @@
-const sdk = require('node-appwrite');
+import { Client, Databases, Permission, Role } from 'node-appwrite';
 
-module.exports = async function (req, res) {
-  const client = new sdk.Client();
-  const databases = new sdk.Databases(client);
+// The new Appwrite function signature uses an object parameter.
+export default async ({ req, res, log, error }) => {
+  // Ensure required variables are present.
+  if (
+    !req.variables['APPWRITE_DATABASE_ID'] ||
+    !req.variables['APPWRITE_ENDPOINT'] ||
+    !req.variables['APPWRITE_PROJECT_ID'] ||
+    !req.variables['APPWRITE_API_KEY']
+  ) {
+    error('One or more environment variables are missing.');
+    return res.json({ success: false, error: 'Missing environment variables.' }, 500);
+  }
 
-  // 从环境变量中获取配置信息
-  const databaseId = req.variables['APPWRITE_DATABASE_ID'];
-  const usersCollectionId = 'users'; // 你的 users 集合的 ID
-
-  // 设置 Appwrite SDK 的客户端
-  client
+  const client = new Client()
     .setEndpoint(req.variables['APPWRITE_ENDPOINT'])
     .setProject(req.variables['APPWRITE_PROJECT_ID'])
     .setKey(req.variables['APPWRITE_API_KEY']);
 
-  // 获取触发事件的 payload
-  const payload = JSON.parse(req.payload);
-  console.log(payload);
+  const databases = new Databases(client);
 
-  // 获取新创建的 Auth 用户的信息
+  // Appwrite automatically parses the payload, no need for JSON.parse
+  const payload = req.payload;
+  log('Function triggered with payload:');
+  log(payload);
+
   const userId = payload['$id'];
   const userName = payload['name'];
   const userEmail = payload['email'];
 
+  if (!userId || !userName || !userEmail) {
+    error('Payload is missing required user data ($id, name, email).');
+    return res.json({ success: false, error: 'Invalid payload data.' }, 400);
+  }
+
+  const databaseId = req.variables['APPWRITE_DATABASE_ID'];
+  const usersCollectionId = 'users';
+
   try {
-    // 在 users 集合中创建文档
     await databases.createDocument(
       databaseId,
       usersCollectionId,
-      userId, // 使用 Auth 用户的 $id 作为文档 ID
+      userId, // Use Auth user's $id as the document ID
       {
-        userId: userId,
+        userId: userId, // Store the user ID in a dedicated 'userId' attribute
         name: userName,
         email: userEmail,
-        // nickname 和 avatarUrl 初始为空
+        nickname: userName, // Set nickname initially to the user's name
+        avatarUrl: null,  // Explicitly set avatarUrl to null
       },
       [
-        // 设置权限：只有用户自己可以读、写
-        sdk.Permission.read(sdk.Role.user(userId)),
-        sdk.Permission.update(sdk.Role.user(userId)),
-        sdk.Permission.delete(sdk.Role.user(userId)),
+        Permission.read(Role.user(userId)),
+        Permission.update(Role.user(userId)),
+        Permission.delete(Role.user(userId)),
       ]
     );
 
-    console.log(`Created user document for user ID: ${userId}`);
-    res.json({ success: true }); // 返回成功
-  } catch (error) {
-    console.error('Error creating user document:', error);
-    res.json({ success: false, error: error.message }, 500); // 返回错误
+    log(`Successfully created user document for user ID: ${userId}`);
+    return res.json({ success: true });
+  } catch (e) {
+    error('Error creating user document:', e);
+    return res.json({ success: false, error: e.message }, 500);
   }
 };

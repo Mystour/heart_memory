@@ -1,13 +1,11 @@
 import 'dart:typed_data';
 
 import 'package:appwrite/appwrite.dart';
-import 'package:appwrite/models.dart' as models;
 import 'package:heart_memory/models/memory.dart';
 import 'package:heart_memory/models/anniversary.dart';
 import 'package:heart_memory/models/message.dart';
 import 'package:heart_memory/models/user.dart';
 import 'package:heart_memory/utils/app_constants.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:heart_memory/models/couple.dart';
 
 class AppwriteService {
@@ -43,7 +41,7 @@ class AppwriteService {
           databaseId: AppConstants.databaseId,
           collectionId: "users",
           queries: [
-            Query.equal('\$id', appwriteUser.$id),
+            Query.equal('userId', appwriteUser.$id),
           ]
       );
       if(userDoc.documents.isNotEmpty){
@@ -67,11 +65,14 @@ class AppwriteService {
           databaseId: AppConstants.databaseId,
           collectionId: "users",
           queries: [
-            Query.equal('\$id', appwriteUser.$id),
+            Query.equal('userId', appwriteUser.$id),
           ]
       );
       if(userDoc.documents.isNotEmpty){
         _currentUser = User.fromMap(userDoc.documents.first.data);
+      }
+      if (_currentUserId == null) {
+        throw Exception("User not logged in.");
       }
       return _currentUserId!;
     } catch (e) {
@@ -80,37 +81,49 @@ class AppwriteService {
   }
 
   // 获取当前用户信息 (可能返回 null)
-  // 获取当前用户信息。可能返回 null，调用处需要处理
   Future<User?> getCurrentUser() async {
     if (_currentUser != null) {
       return _currentUser;
     }
     try {
       final appwriteUser = await _account.get();
+      _currentUserId = appwriteUser.$id;
       final userDoc = await _databases.listDocuments(
           databaseId: AppConstants.databaseId,
           collectionId: "users",
           queries: [
-            Query.equal('\$id', appwriteUser.$id),
+            Query.equal('userId', appwriteUser.$id),
           ]
       );
       if(userDoc.documents.isNotEmpty){
-        _currentUser = User.fromMap(userDoc.documents.first.data); // 使用 User.fromMap
+        _currentUser = User.fromMap(userDoc.documents.first.data);
       }
       return _currentUser;
     } catch (e) {
       return null;
     }
   }
+
   // 更新用户昵称
   Future<void> updateUserName(String userId, String newNickname) async {
     try {
-      final document = await _databases.updateDocument(
+      final userDocs = await _databases.listDocuments(
         databaseId: AppConstants.databaseId,
-        collectionId: 'users', // 更新 users 集合
-        documentId: userId,   // 使用用户 ID
+        collectionId: 'users',
+        queries: [Query.equal('userId', userId)],
+      );
+
+      if (userDocs.documents.isEmpty) {
+        throw Exception("User document not found for update.");
+      }
+      final documentId = userDocs.documents.first.$id;
+
+      await _databases.updateDocument(
+        databaseId: AppConstants.databaseId,
+        collectionId: 'users',
+        documentId: documentId,
         data: {
-          'nickname': newNickname, // 更新 nickname 字段
+          'nickname': newNickname,
         },
       );
       //  更新本地的用户缓存
@@ -336,7 +349,6 @@ class AppwriteService {
     }
   }
 
-  // 获取文件预览 (返回 Uint8List)
   Future<Uint8List> getFilePreview({required String fileId}) async {
     try {
       final bytes = await _storage.getFilePreview(
@@ -350,56 +362,29 @@ class AppwriteService {
   }
 
   // ---------- 用户认证相关 ----------
-  // 登录
   Future<User> login(String email, String password) async {
     try {
-      //  先尝试获取现有会话，如果存在，则不进行登录操作直接返回
+      await _account.createEmailPasswordSession(email: email, password: password);
       final appwriteUser = await _account.get();
       _currentUserId = appwriteUser.$id;
-      //  从users集合中获取用户信息
       final userDoc = await _databases.listDocuments(
           databaseId: AppConstants.databaseId,
           collectionId: "users",
           queries: [
-            Query.equal('\$id', appwriteUser.$id),
+            Query.equal('userId', appwriteUser.$id),
           ]
       );
       if(userDoc.documents.isNotEmpty){
-        _currentUser = User.fromMap(userDoc.documents.first.data); // 使用 User.fromMap
+        _currentUser = User.fromMap(userDoc.documents.first.data);
       }
-      //  如果_currentUser为空，抛出异常
       if(_currentUser == null) throw Exception("User information not found in 'users' collection.");
       return _currentUser!;
-    } on AppwriteException catch (e) {
-      // 如果出现 AppwriteException 异常，说明没有有效会话，需要进行登录
-      if (e.code == 401) {
-        final session = await _account.createEmailPasswordSession(email: email, password: password);
-        final appwriteUser = await _account.get();
-        _currentUserId = appwriteUser.$id;
-        //  从users集合中获取用户信息
-        final userDoc = await _databases.listDocuments(
-            databaseId: AppConstants.databaseId,
-            collectionId: "users",
-            queries: [
-              Query.equal('\$id', appwriteUser.$id),
-            ]
-        );
-        if(userDoc.documents.isNotEmpty){
-          _currentUser = User.fromMap(userDoc.documents.first.data); // 使用 User.fromMap
-        }
-        //  如果_currentUser为空，抛出异常
-        if(_currentUser == null) throw Exception("User information not found in 'users' collection.");
-        return _currentUser!;
-      }
-      rethrow;
     } catch (e) {
-      // 处理其他异常情况
       rethrow;
     }
   }
 
-  //注册
-  Future<User> register(String name,String email, String password) async {  // 移除 nickname 参数
+  Future<User> register(String name,String email, String password) async {
     try {
       final appwriteUser = await _account.create(
           userId: ID.unique(),
@@ -408,14 +393,11 @@ class AppwriteService {
           name: name
       );
 
-      //注意这里注册成功后立即登录了,现在不立即登录了
-      // final session = await _account.createEmailPasswordSession(email: email, password: password);
       _currentUserId = appwriteUser.$id;
-      await Future.delayed(Duration(seconds: 2)); // 等待云函数执行
+      await Future.delayed(const Duration(seconds: 2)); // 等待云函数执行
       _currentUser = await getCurrentUser();
 
-      //  如果_currentUser为空，抛出异常
-      if(_currentUser == null) throw Exception("User information not found in 'users' collection.");
+      if(_currentUser == null) throw Exception("User information not found in 'users' collection after registration.");
       return _currentUser!;
     } catch (e) {
       rethrow;
@@ -434,7 +416,6 @@ class AppwriteService {
 
   // ---------- 情侣绑定相关 ----------
 
-  // 创建情侣关系 (修改)
   Future<Couple> createCouple(String user1Id, String user2Id) async {
     try {
       final document = await _databases.createDocument(
@@ -442,8 +423,8 @@ class AppwriteService {
         collectionId: 'couples',
         documentId: ID.unique(),
         data: {
-          'user1Id': [user1Id], // 放入数组中
-          'user2Id': [user2Id], // 放入数组中
+          'user1Id': [user1Id],
+          'user2Id': [user2Id],
         },
       );
       return Couple.fromMap(document.data);
@@ -452,15 +433,16 @@ class AppwriteService {
     }
   }
 
-  // 根据用户 ID 获取情侣关系 (修改)
   Future<Couple?> getCoupleByUser(String userId) async {
     try {
       final documents = await _databases.listDocuments(
         databaseId: AppConstants.databaseId,
         collectionId: 'couples',
         queries: [
-          Query.equal('user1Id', [userId]), //  移除类型转换
-          Query.equal('user2Id', [userId]), //  移除类型转换
+          Query.or([
+            Query.equal('user1Id', [userId]),
+            Query.equal('user2Id', [userId]),
+          ])
         ],
       );
 
@@ -474,7 +456,6 @@ class AppwriteService {
     }
   }
 
-  // 根据邮箱获取用户 ID
   Future<String?> findUserIdByEmail(String email) async {
     try {
       final documents = await _databases.listDocuments(
@@ -485,30 +466,33 @@ class AppwriteService {
         ],
       );
       if (documents.documents.isNotEmpty) {
-        return documents.documents.first.data['\$id']; // 返回找到的用户的 ID
+        return documents.documents.first.data['userId'];
       } else {
-        return null; // 没有找到用户
+        return null;
       }
     } catch (e) {
       rethrow;
     }
   }
 
-  // 根据用户ID获取用户信息
   Future<User?> getUserById(String userId) async{
     try{
-      final document = await _databases.getDocument(
+      final documents = await _databases.listDocuments(
           databaseId: AppConstants.databaseId,
           collectionId: 'users',
-          documentId: userId
+          queries: [
+            Query.equal('userId', userId),
+          ]
       );
-      return User.fromMap(document.data);
+      if (documents.documents.isNotEmpty) {
+        return User.fromMap(documents.documents.first.data);
+      }
+      return null;
     } catch (e) {
       rethrow;
     }
   }
 
-  // 解除情侣关系
   Future<void> deleteCouple(String coupleId) async {
     try {
       await _databases.deleteDocument(
