@@ -1,8 +1,8 @@
 name: create_user_function
-description: Appwrite function to create a user document in the database.
+description: A basic Appwrite function.
 version: 1.0.0
 environment:
   sdk: '>=3.0.0 <4.0.0'
 
+# No dependencies needed for this test
 dependencies:
-  dart_appwrite: ^11.0.0
