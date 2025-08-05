@@ -1,18 +1,8 @@
 import 'dart:convert';
 import 'package:dart_appwrite/dart_appwrite.dart';
 
-/*
-  'context' is the execution context passed to the function.
-  It contains:
-    'req' - request object with headers, payload, and variables
-    'res' - response object to send data back to the client
-    'log(message)' - function to log messages
-    'error(message)' - function to error messages
-*/
 Future<dynamic> main(final context) async {
   final client = Client();
-
-  // You can remove services you don't use
   final databases = Databases(client);
 
   final databaseId = context.req.variables['APPWRITE_DATABASE_ID'];
@@ -32,7 +22,6 @@ Future<dynamic> main(final context) async {
       .setKey(context.req.variables['APPWRITE_API_KEY']);
 
   try {
-    // Use context.req.body instead of context.req.payload for newer runtimes
     final payload = jsonDecode(context.req.payload);
     context.log('Function triggered with payload:');
     context.log(payload);
@@ -49,13 +38,13 @@ Future<dynamic> main(final context) async {
     await databases.createDocument(
       databaseId: databaseId,
       collectionId: usersCollectionId,
-      documentId: userId, // Use Auth user's $id as the document ID
+      documentId: userId,
       data: {
-        'userId': userId, // Store the user ID in a dedicated 'userId' attribute
+        'userId': userId,
         'name': userName,
         'email': userEmail,
-        'nickname': userName, // Set nickname initially to the user's name
-        'avatarUrl': null, // Explicitly set avatarUrl to null
+        'nickname': userName,
+        'avatarUrl': null,
       },
       permissions: [
         Permission.read(Role.user(userId)),

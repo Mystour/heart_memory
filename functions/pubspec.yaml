@@ -1,4 +1,4 @@
-name: create_user
+name: create_user_function
 description: Appwrite function to create a user document in the database.
 version: 1.0.0
 environment:
